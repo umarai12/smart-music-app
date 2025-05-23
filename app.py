@@ -34,7 +34,7 @@ def create_user(username, password):
 @st.cache_data
 def load_songs():
     df = pd.read_excel("songs.xlsx")
-    df.dropna(subset=["Song Name", "Genre", "Artist"], inplace=True)
+    df.dropna(subset=["Genre", "Title"], inplace=True)
     return df
 
 def get_suggestions(user_genre, all_genres):
@@ -65,7 +65,7 @@ if choice == "Login":
 
             filtered_songs = songs_df[songs_df["Genre"] == selected_genre]
             st.write(f"Showing {len(filtered_songs)} songs in **{selected_genre}** genre:")
-            st.table(filtered_songs[["Song Name", "Artist"]])
+            st.table(filtered_songs[["Title", "Artist"]])
 
             # If user listens to 5+ songs in one genre, suggest others
             if len(filtered_songs) >= 5:
