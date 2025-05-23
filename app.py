@@ -65,7 +65,7 @@ if choice == "Login":
 
             filtered_songs = songs_df[songs_df["Genre"] == selected_genre]
             st.write(f"Showing {len(filtered_songs)} songs in **{selected_genre}** genre:")
-            st.table(filtered_songs[["Title", "Artist"]])
+            st.table(filtered_songs[["Title", "Artist "]])
 
             # If user listens to 5+ songs in one genre, suggest others
             if len(filtered_songs) >= 5:
