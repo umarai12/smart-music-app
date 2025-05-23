@@ -90,21 +90,19 @@ if st.session_state.logged_in:
     songs_df = load_songs()
     genres = sorted(songs_df["Genre"].dropna().unique().tolist())
 
-    st.subheader("🎧 Choose Your Favorite Genres")
+    st.subheader("🎧 Step 1: Choose Your Favorite Genres")
     selected_genres = st.multiselect("Select Genre(s)", genres)
 
     if selected_genres:
-        filtered_songs = songs_df[songs_df["Genre"].isin(selected_genres)]
-        st.write(f"Showing {len(filtered_songs)} songs for selected genres:")
-        st.table(filtered_songs[["Title", "Artist ", "Genre"]])
-
-        # Genre-wise check and warning
         for genre in selected_genres:
-            genre_count = len(filtered_songs[filtered_songs["Genre"] == genre])
-            if genre_count >= 5:
-                st.warning(f"You’ve explored many songs in **{genre}**! Try other genres too 🎶")
+            genre_songs = songs_df[songs_df["Genre"] == genre]
+            song_options = genre_songs["Title"].tolist()
+            st.markdown(f"### 🎼 Select Songs from **{genre}**")
+            selected_songs = st.multiselect(f"Select songs from {genre}", song_options, key=genre)
 
-        # Suggested genres
+            if len(selected_songs) >= 5:
+                st.warning(f"You’ve selected {len(selected_songs)} songs from **{genre}**. Try exploring other genres too 🎶")
+
         st.subheader("🌟 Suggested Genres to Explore")
         suggestions = get_suggestions(selected_genres, genres)
         if suggestions:
@@ -112,5 +110,6 @@ if st.session_state.logged_in:
                 st.markdown(f"- {g}")
         else:
             st.info("You're already exploring all genres!")
+
     else:
         st.info("Please select at least one genre to view songs.")
