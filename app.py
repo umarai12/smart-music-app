@@ -38,52 +38,78 @@ def load_songs():
     return df
 
 def get_suggestions(user_genre, all_genres):
-    return [g for g in all_genres if g != user_genre][:3]
+    return [g for g in all_genres if g not in user_genre][:3]
 
-# --- UI ---
+# --- UI Setup ---
 st.set_page_config(page_title="Streamify", layout="wide")
 st.markdown("<h1 style='color:#1DB954;'>🎵 Streamify - Smart Music Suggester</h1>", unsafe_allow_html=True)
 
-menu = ["Login", "Register"]
-choice = st.sidebar.selectbox("Select Action", menu)
+if "logged_in" not in st.session_state:
+    st.session_state.logged_in = False
+if "username" not in st.session_state:
+    st.session_state.username = ""
 
-# Login
-if choice == "Login":
-    st.sidebar.subheader("Login Section")
-    username = st.sidebar.text_input("Username")
-    password = st.sidebar.text_input("Password", type="password")
-    login_btn = st.sidebar.button("Login")
+# --- Register ---
+if not st.session_state.logged_in:
+    menu = ["Login", "Register"]
+    choice = st.sidebar.selectbox("Select Action", menu)
 
-    if login_btn:
-        if verify_user(username, password):
-            st.success(f"Welcome {username} 👋")
-            songs_df = load_songs()
-            genres = songs_df["Genre"].unique().tolist()
+    if choice == "Login":
+        st.sidebar.subheader("Login Section")
+        username = st.sidebar.text_input("Username")
+        password = st.sidebar.text_input("Password", type="password")
+        login_btn = st.sidebar.button("Login")
 
-            st.subheader("🎧 Choose Your Favorite Genre")
-            selected_genre = st.selectbox("Select Genre", genres)
+        if login_btn:
+            if verify_user(username, password):
+                st.session_state.logged_in = True
+                st.session_state.username = username
+                st.success(f"Welcome {username} 👋")
+                st.experimental_rerun()
+            else:
+                st.error("Invalid credentials. Try again.")
 
-            filtered_songs = songs_df[songs_df["Genre"] == selected_genre]
-            st.write(f"Showing {len(filtered_songs)} songs in **{selected_genre}** genre:")
-            st.table(filtered_songs[["Title", "Artist "]])
+    elif choice == "Register":
+        st.sidebar.subheader("Create New Account")
+        new_user = st.sidebar.text_input("Username")
+        new_pass = st.sidebar.text_input("Password", type="password")
+        if st.sidebar.button("Register"):
+            if create_user(new_user, new_pass):
+                st.success("Account created successfully!")
+            else:
+                st.error("Username already exists. Try a different one.")
 
-            # If user listens to 5+ songs in one genre, suggest others
-            if len(filtered_songs) >= 5:
-                st.warning("You've explored a lot of this genre! Try something new 🎶")
-                st.subheader("🌟 Suggested Genres to Explore")
-                suggestions = get_suggestions(selected_genre, genres)
-                for g in suggestions:
-                    st.markdown(f"- {g}")
+# --- Main App ---
+if st.session_state.logged_in:
+    st.sidebar.success(f"Logged in as {st.session_state.username}")
+    logout_btn = st.sidebar.button("Logout")
+    if logout_btn:
+        st.session_state.logged_in = False
+        st.session_state.username = ""
+        st.experimental_rerun()
+
+    songs_df = load_songs()
+    genres = sorted(songs_df["Genre"].dropna().unique().tolist())
+
+    st.subheader("🎧 Choose Your Favorite Genres")
+    selected_genres = st.multiselect("Select Genre(s)", genres)
+
+    if selected_genres:
+        filtered_songs = songs_df[songs_df["Genre"].isin(selected_genres)]
+        st.write(f"Showing {len(filtered_songs)} songs for selected genres:")
+        st.table(filtered_songs[["Title", "Artist"]])
+
+        for genre in selected_genres:
+            genre_count = len(filtered_songs[filtered_songs["Genre"] == genre])
+            if genre_count >= 5:
+                st.warning(f"You’ve explored many songs in '{genre}'! Try exploring other genres too 🎶")
+
+        st.subheader("🌟 Suggested Genres to Explore")
+        suggestions = get_suggestions(selected_genres, genres)
+        if suggestions:
+            for g in suggestions:
+                st.markdown(f"- {g}")
         else:
-            st.error("Invalid credentials. Try again.")
-
-# Register
-elif choice == "Register":
-    st.sidebar.subheader("Create New Account")
-    new_user = st.sidebar.text_input("Username")
-    new_pass = st.sidebar.text_input("Password", type="password")
-    if st.sidebar.button("Register"):
-        if create_user(new_user, new_pass):
-            st.success("Account created successfully!")
-        else:
-            st.error("Username already exists. Try a different one.")
+            st.info("You're already exploring all genres!")
+    else:
+        st.info("Please select at least one genre to view songs.")
