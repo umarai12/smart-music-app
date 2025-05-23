@@ -96,7 +96,7 @@ if st.session_state.logged_in:
     if selected_genres:
         filtered_songs = songs_df[songs_df["Genre"].isin(selected_genres)]
         st.write(f"Showing {len(filtered_songs)} songs for selected genres:")
-        st.table(filtered_songs[["Title", "Artist", "Genre"]])
+        st.table(filtered_songs[["Title", "Artist ", "Genre"]])
 
         # Genre-wise check and warning
         for genre in selected_genres:
