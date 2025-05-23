@@ -37,8 +37,8 @@ def load_songs():
     df.dropna(subset=["Genre", "Title"], inplace=True)
     return df
 
-def get_suggestions(user_genre, all_genres):
-    return [g for g in all_genres if g not in user_genre][:3]
+def get_suggestions(user_genres, all_genres):
+    return [g for g in all_genres if g not in user_genres][:3]
 
 # --- UI Setup ---
 st.set_page_config(page_title="Streamify", layout="wide")
@@ -49,7 +49,7 @@ if "logged_in" not in st.session_state:
 if "username" not in st.session_state:
     st.session_state.username = ""
 
-# --- Register ---
+# --- Register / Login ---
 if not st.session_state.logged_in:
     menu = ["Login", "Register"]
     choice = st.sidebar.selectbox("Select Action", menu)
@@ -65,7 +65,7 @@ if not st.session_state.logged_in:
                 st.session_state.logged_in = True
                 st.session_state.username = username
                 st.success(f"Welcome {username} 👋")
-                st.experimental_rerun()
+                st.rerun()
             else:
                 st.error("Invalid credentials. Try again.")
 
@@ -82,11 +82,10 @@ if not st.session_state.logged_in:
 # --- Main App ---
 if st.session_state.logged_in:
     st.sidebar.success(f"Logged in as {st.session_state.username}")
-    logout_btn = st.sidebar.button("Logout")
-    if logout_btn:
+    if st.sidebar.button("Logout"):
         st.session_state.logged_in = False
         st.session_state.username = ""
-        st.experimental_rerun()
+        st.rerun()
 
     songs_df = load_songs()
     genres = sorted(songs_df["Genre"].dropna().unique().tolist())
@@ -97,13 +96,15 @@ if st.session_state.logged_in:
     if selected_genres:
         filtered_songs = songs_df[songs_df["Genre"].isin(selected_genres)]
         st.write(f"Showing {len(filtered_songs)} songs for selected genres:")
-        st.table(filtered_songs[["Title", "Artist"]])
+        st.table(filtered_songs[["Title", "Artist", "Genre"]])
 
+        # Genre-wise check and warning
         for genre in selected_genres:
             genre_count = len(filtered_songs[filtered_songs["Genre"] == genre])
             if genre_count >= 5:
-                st.warning(f"You’ve explored many songs in '{genre}'! Try exploring other genres too 🎶")
+                st.warning(f"You’ve explored many songs in **{genre}**! Try other genres too 🎶")
 
+        # Suggested genres
         st.subheader("🌟 Suggested Genres to Explore")
         suggestions = get_suggestions(selected_genres, genres)
         if suggestions:
